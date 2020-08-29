@@ -70,6 +70,8 @@ class player(object):
         #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
     def hit(self):
+        self.isJump = False
+        self.jumpCount = 10
         self.x = 100
         self.y = 410
         self.walkCount = 0
@@ -187,12 +189,12 @@ bullets = []
 run = True
 while run:
     clock.tick(27)  # 밀리초단위다 프레임 설정!
-
-        # 사람이 고블린 히트박스에 맞았는지 여부 판단
-    if man.hitbox[1] < goblin.hitbox[1] + goblin.hitbox[3] and man.hitbox[1] + man.hitbox[3] > goblin.hitbox[1]:
-        if man.hitbox[0] + man.hitbox[2] > goblin.hitbox[0] and man.hitbox[0] < goblin.hitbox[0] + goblin.hitbox[2]:
-            man.hit()
-            score -= 5
+    if goblin.visible == True:
+            # 사람이 고블린 히트박스에 맞았는지 여부 판단
+        if man.hitbox[1] < goblin.hitbox[1] + goblin.hitbox[3] and man.hitbox[1] + man.hitbox[3] > goblin.hitbox[1]:
+            if man.hitbox[0] + man.hitbox[2] > goblin.hitbox[0] and man.hitbox[0] < goblin.hitbox[0] + goblin.hitbox[2]:
+                man.hit()
+                score -= 5
 
     if shootloop > 0:
         shootloop += 1
@@ -207,10 +209,11 @@ while run:
         # 총알이 고블린 히트박스에 맞았는지 여부 판단
         if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]:
             if bullet.x - bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]:
-                hitSound.play()
-                goblin.hit()
-                score += 1
-                bullets.remove(bullet)
+                if goblin.visible:
+                    hitSound.play()
+                    goblin.hit()
+                    score += 1
+                    bullets.remove(bullet)
 
         if bullet.x < 500 and bullet.x > 0:
             bullet.x += bullet.vel

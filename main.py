@@ -19,6 +19,8 @@ char = pygame.image.load('img/standing.png')
 # 프레임설정
 clock = pygame.time.Clock()
 
+# 점수 설정
+score = 0
 
 class player(object):
     def __init__(self, x, y, width, height):
@@ -58,7 +60,7 @@ class player(object):
             else:
                 win.blit(walkLeft[0], (self.x, self.y))
         self.hitbox = (self.x + 17, self.y + 11, 29, 52)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+        #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
 
 class projectile(object):
@@ -87,20 +89,30 @@ class enemy(object):
         self.walkCount = 0
         self.vel = 3
         self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+        self.health = 10
+        # 체력이 없으면 안보이게 설정하기 위함
+        self.visible = True
 
     def draw(self, win):
         self.move()
-        if self.walkCount + 1 >= 33:
-            self.walkCount = 0
+        if self.visible:
+            if self.walkCount + 1 >= 33:
+                self.walkCount = 0
 
-        if self.vel > 0:
-            win.blit(self.walkRight[self.walkCount // 3], (self.x, self.y))
-            self.walkCount += 1
-        else:
-            win.blit(self.walkLeft[self.walkCount // 3], (self.x, self.y))
-            self.walkCount += 1
-        self.hitbox = (self.x + 17, self.y + 2, 31, 57)
-        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
+            if self.vel > 0:
+                win.blit(self.walkRight[self.walkCount // 3], (self.x, self.y))
+                self.walkCount += 1
+            else:
+                win.blit(self.walkLeft[self.walkCount // 3], (self.x, self.y))
+                self.walkCount += 1
+
+            # HP 바 구현
+            pygame.draw.rect(win,(255, 0, 0), (self.hitbox[0], self.hitbox[1] - 20, 50, 10))
+            # 맞을때마다 피가 깎여서 초록색 바가 줄어드는 것을 구현
+            pygame.draw.rect(win, (0, 128, 0), (self.hitbox[0], self.hitbox[1] - 20, 50 - (5 * (10 - self.health)), 10))
+
+            self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+            #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
 
     def move(self):
@@ -120,14 +132,20 @@ class enemy(object):
                 self.walkCount = 0
 
     def hit(self):
+        if self.health > 0:
+            self.health -= 1
+        else :
+            self.visible = False
+
         print('hit')
-        pass
 
 def redrawGameWindow():
     # 메인 루프안에 draw를 쓰는것은 좋지않다. 함수를만들어쓰자.
-    global walkCount
+    win.blit(bg, (0, 0))  # 백그라운드 이미지와 위치를 넣는다
 
-    win.blit(bg, (0, 0))  # 백그라운드 이미지와 위 치를 넣는다
+    # 점수 판 작성
+    text = font.render('Score : ' + str(score), 1, (0, 0, 0))
+    win.blit(text,(350,10))
     man.draw(win)
     goblin.draw(win)
     for bullet in bullets:
@@ -136,6 +154,8 @@ def redrawGameWindow():
 
 
 # main loop
+# 폰트 설정
+font = pygame.font.SysFont('comicsans', 30, True)
 man = player(100, 410, 64, 64)
 goblin = enemy(100, 410, 64, 64, 450)
 shootloop = 0
@@ -158,6 +178,7 @@ while run:
         if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]:
             if bullet.x - bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]:
                 goblin.hit()
+                score += 1
                 bullets.remove(bullet)
 
         if bullet.x < 500 and bullet.x > 0:

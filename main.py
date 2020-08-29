@@ -70,6 +70,48 @@ class projectile(object):
     def draw(self, win):
         pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
 
+class enemy(object):
+    walkRight = [pygame.image.load('img/R%sE.png' % frame) for frame in range(1, 12)]
+    walkLeft = [pygame.image.load('img/L%sE.png' % frame) for frame in range(1, 12)]
+
+    def __init__(self, x, y, width, height, end):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.end = end
+        self.path = (self.x, self.end)
+        self.walkCount = 0
+        self.vel = 3
+
+    def draw(self, win):
+        self.move()
+        if self.walkCount + 1 >= 33:
+            self.walkCount = 0
+
+        if self.vel > 0:
+            win.blit(self.walkRight[self.walkCount // 3], (self.x, self.y))
+            self.walkCount += 1
+        else:
+            win.blit(self.walkLeft[self.walkCount // 3], (self.x, self.y))
+            self.walkCount += 1
+
+
+    def move(self):
+        # 오른쪽으로 이동
+        if self.vel > 0:
+            if self.x + self.vel < self.path[1]:
+                self.x += self.vel
+            else:
+                self.vel = self.vel * -1   # 경계 도달시 방향전환
+                self.walkCount = 0
+        # 왼쪽 이동
+        else:
+            if self.x - self.vel > self.path[0]:
+                self.x += self.vel
+            else:
+                self.vel = self.vel * -1  # 경계 도달시 방향전환
+                self.walkCount = 0
 
 def redrawGameWindow():
     # 메인 루프안에 draw를 쓰는것은 좋지않다. 함수를만들어쓰자.
@@ -77,13 +119,15 @@ def redrawGameWindow():
 
     win.blit(bg, (0, 0))  # 백그라운드 이미지와 위 치를 넣는다
     man.draw(win)
+    goblin.draw(win)
     for bullet in bullets:
         bullet.draw(win)
     pygame.display.update()  # 이걸 해줘야 내가 설정한 그림들이 나옴
 
 
 # main loop
-man = player(300, 410, 64, 64)
+man = player(100, 410, 64, 64)
+goblin = enemy(100, 410, 64, 64, 450)
 bullets = []
 run = True
 while run:

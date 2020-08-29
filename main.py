@@ -38,6 +38,7 @@ class player(object):
         self.right = False
         self.walkCount = 0
         self.standing = True
+        self.hitbox = (self.x + 17, self.y + 11, 29, 52)
 
     def draw(self, win):
         # 이미지9개에 각 3프레임으로 할꺼니까 27까지로 설정
@@ -56,6 +57,8 @@ class player(object):
                 win.blit(walkRight[0], (self.x, self.y))
             else:
                 win.blit(walkLeft[0], (self.x, self.y))
+        self.hitbox = (self.x + 17, self.y + 11, 29, 52)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
 
 class projectile(object):
@@ -83,6 +86,7 @@ class enemy(object):
         self.path = (self.x, self.end)
         self.walkCount = 0
         self.vel = 3
+        self.hitbox = (self.x + 17, self.y + 2, 31, 57)
 
     def draw(self, win):
         self.move()
@@ -95,6 +99,8 @@ class enemy(object):
         else:
             win.blit(self.walkLeft[self.walkCount // 3], (self.x, self.y))
             self.walkCount += 1
+        self.hitbox = (self.x + 17, self.y + 2, 31, 57)
+        pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
 
     def move(self):
@@ -113,6 +119,10 @@ class enemy(object):
                 self.vel = self.vel * -1  # 경계 도달시 방향전환
                 self.walkCount = 0
 
+    def hit(self):
+        print('hit')
+        pass
+
 def redrawGameWindow():
     # 메인 루프안에 draw를 쓰는것은 좋지않다. 함수를만들어쓰자.
     global walkCount
@@ -128,16 +138,28 @@ def redrawGameWindow():
 # main loop
 man = player(100, 410, 64, 64)
 goblin = enemy(100, 410, 64, 64, 450)
+shootloop = 0
 bullets = []
 run = True
 while run:
     clock.tick(27)  # 밀리초단위다 프레임 설정!
+
+    if shootloop > 0:
+        shootloop += 1
+    if shootloop > 3:
+        shootloop = 0
     # 이벤트 체크(유저에게 일어나는 모든일 ex.마우스클릭)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
 
     for bullet in bullets:
+        # 총알이 고블린 히트박스에 맞았는지 여부 판단
+        if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]:
+            if bullet.x - bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]:
+                goblin.hit()
+                bullets.remove(bullet)
+
         if bullet.x < 500 and bullet.x > 0:
             bullet.x += bullet.vel
         else:
@@ -146,13 +168,14 @@ while run:
 
     keys = pygame.key.get_pressed()
 
-    if keys[pygame.K_SPACE]:
+    if keys[pygame.K_SPACE] and shootloop == 0:
         if man.left:
             facing = -1
         else:
             facing = 1
         if len(bullets) < 5: # 쏠 수 있는 탄환을 5개로 제한
             bullets.append(projectile(round(man.x + man.width // 2), round(man.y + man.height //2), 6, (0, 0, 0), facing))
+        shootloop = 1
 
     # 방향키 누르는것에 따라 이동하면서, 경계를 넘어가지 않게함
     if keys[pygame.K_LEFT] and man.x > man.vel:

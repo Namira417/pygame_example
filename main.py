@@ -19,6 +19,13 @@ char = pygame.image.load('img/standing.png')
 # 프레임설정
 clock = pygame.time.Clock()
 
+# 음악 파일 불러오기
+bulletSound = pygame.mixer.Sound('music/bullet.wav')
+hitSound = pygame.mixer.Sound('music/hit.wav')
+
+music = pygame.mixer.music.load('music/music.mp3') # 배경음은 방식이 조금 다름에 유의
+pygame.mixer.music.play(-1) # -1은 무한루프 재생을 뜻함
+
 # 점수 설정
 score = 0
 
@@ -62,6 +69,25 @@ class player(object):
         self.hitbox = (self.x + 17, self.y + 11, 29, 52)
         #pygame.draw.rect(win, (255, 0, 0), self.hitbox, 2)
 
+    def hit(self):
+        self.x = 100
+        self.y = 410
+        self.walkCount = 0
+        font1 = pygame.font.SysFont('comicsans', 100)
+        text = font1.render('-5', 1, (255, 0, 0))
+        # 텍스트를 정중앙에 배치하는법
+        # 전체 길이 / 2 - 텍스트 길이 / 2
+        win.blit(text, (250 - (text.get_width()/2), 200))
+        pygame.display.update()
+        # 텍스트를 화면에 잠깐 머물게 하는 법
+        i = 0
+        while i < 150:
+            pygame.time.delay(10)
+            i += 1
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    i = 151
+                    pygame.quit()
 
 class projectile(object):
     def __init__(self, x, y, radius, color, facing):
@@ -137,8 +163,6 @@ class enemy(object):
         else :
             self.visible = False
 
-        print('hit')
-
 def redrawGameWindow():
     # 메인 루프안에 draw를 쓰는것은 좋지않다. 함수를만들어쓰자.
     win.blit(bg, (0, 0))  # 백그라운드 이미지와 위치를 넣는다
@@ -157,12 +181,18 @@ def redrawGameWindow():
 # 폰트 설정
 font = pygame.font.SysFont('comicsans', 30, True)
 man = player(100, 410, 64, 64)
-goblin = enemy(100, 410, 64, 64, 450)
+goblin = enemy(200, 410, 64, 64, 450)
 shootloop = 0
 bullets = []
 run = True
 while run:
     clock.tick(27)  # 밀리초단위다 프레임 설정!
+
+        # 사람이 고블린 히트박스에 맞았는지 여부 판단
+    if man.hitbox[1] < goblin.hitbox[1] + goblin.hitbox[3] and man.hitbox[1] + man.hitbox[3] > goblin.hitbox[1]:
+        if man.hitbox[0] + man.hitbox[2] > goblin.hitbox[0] and man.hitbox[0] < goblin.hitbox[0] + goblin.hitbox[2]:
+            man.hit()
+            score -= 5
 
     if shootloop > 0:
         shootloop += 1
@@ -177,6 +207,7 @@ while run:
         # 총알이 고블린 히트박스에 맞았는지 여부 판단
         if bullet.y - bullet.radius < goblin.hitbox[1] + goblin.hitbox[3] and bullet.y + bullet.radius > goblin.hitbox[1]:
             if bullet.x - bullet.radius > goblin.hitbox[0] and bullet.x - bullet.radius < goblin.hitbox[0] + goblin.hitbox[2]:
+                hitSound.play()
                 goblin.hit()
                 score += 1
                 bullets.remove(bullet)
@@ -190,6 +221,7 @@ while run:
     keys = pygame.key.get_pressed()
 
     if keys[pygame.K_SPACE] and shootloop == 0:
+        bulletSound.play()
         if man.left:
             facing = -1
         else:
